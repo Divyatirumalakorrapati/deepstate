@@ -1,0 +1,42 @@
+name: Build and Run ValidatePayload Fuzzer
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Install Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential cmake g++ clang llvm libprotobuf-dev protobuf-compiler
+
+      - name: Clone DeepState
+        run: |
+          git clone https://github.com/trailofbits/deepstate.git
+          cd deepstate
+          mkdir build
+          cd build
+          cmake ..
+          make
+          sudo make install
+
+      - name: Compile ValidatePayload Fuzzer
+        run: |
+          g++ -std=c++11 -o ValidatePayload_fuzzer fuzz/ValidatePayload_fuzzer.cpp -ldeepstate -lstdc++ -lm
+
+      - name: Run ValidatePayload Fuzzer
+        run: |
+          ./ValidatePayload_fuzzer
